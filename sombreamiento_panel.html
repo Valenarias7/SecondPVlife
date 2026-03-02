@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Protocolo Sombreamiento - Comprobación Diodo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 1.1rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #58a6ff;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    font-size: 0.75rem;
+    color: #8b949e;
+    letter-spacing: 0.15em;
+    margin-bottom: 20px;
+  }
+  .container {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .panel-wrap {
+    position: relative;
+    display: inline-block;
+  }
+  canvas#overlay {
+    position: absolute;
+    top: 0; left: 0;
+    pointer-events: none;
+  }
+  img#panel {
+    display: block;
+    max-width: 680px;
+    width: 100%;
+    border: 1px solid #30363d;
+  }
+  .legend {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 20px;
+    min-width: 260px;
+    max-width: 280px;
+  }
+  .legend h2 {
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: #58a6ff;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 10px;
+  }
+  .shade-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    border: 1px solid transparent;
+  }
+  .shade-item:hover { background: #21262d; }
+  .shade-item.active { border-color: #58a6ff; background: #1c2a3a; }
+  .swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .shade-info { flex: 1; }
+  .shade-name {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #e6edf3;
+  }
+  .shade-desc {
+    font-size: 0.68rem;
+    color: #8b949e;
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .btn-all {
+    margin-top: 16px;
+    width: 100%;
+    background: #21262d;
+    color: #58a6ff;
+    border: 1px solid #30363d;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: background 0.2s;
+  }
+  .btn-all:hover { background: #30363d; }
+  .info-box {
+    margin-top: 20px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 0.68rem;
+    color: #8b949e;
+    line-height: 1.6;
+  }
+  .info-box span { color: #f0883e; }
+</style>
+</head>
+<body>
+
+<h1>⚡ Protocolo Comprobación Diodo de Bypass</h1>
+<p class="subtitle">Sombreamiento Parcial Controlado — Panel Fotovoltaico</p>
+
+<div class="container">
+  <div class="panel-wrap">
+    <img id="panel" src="/mnt/user-data/uploads/WhatsApp_Image_2026-01-19_at_15_01_55.jpeg" alt="Panel Solar Termografía">
+    <canvas id="overlay"></canvas>
+  </div>
+
+  <div class="legend">
+    <h2>📋 Zonas de Sombreado</h2>
+
+    <div class="shade-item active" data-id="0" onclick="toggle(0)">
+      <div class="swatch" style="background:rgba(255,80,80,0.7)"></div>
+      <div class="shade-info">
+        <div class="shade-name">Zona A — Tercio Inferior</div>
+        <div class="shade-desc">Cubre 1er grupo de células. Activa diodo bypass D1. Zona con punto caliente detectado (112°C)</div>
+      </div>
+    </div>
+
+    <div class="shade-item active" data-id="1" onclick="toggle(1)">
+      <div class="swatch" style="background:rgba(255,200,0,0.7)"></div>
+      <div class="shade-info">
+        <div class="shade-name">Zona B — Tercio Central</div>
+        <div class="shade-desc">Cubre 2do grupo de células. Activa diodo bypass D2. Zona promedio ~47.8°C</div>
+      </div>
+    </div>
+
+    <div class="shade-item active" data-id="2" onclick="toggle(2)">
+      <div class="swatch" style="background:rgba(0,180,255,0.7)"></div>
+      <div class="shade-info">
+        <div class="shade-name">Zona C — Tercio Superior</div>
+        <div class="shade-desc">Cubre 3er grupo de células. Activa diodo bypass D3. Zona más fría ~64°C</div>
+      </div>
+    </div>
+
+    <div class="shade-item active" data-id="3" onclick="toggle(3)">
+      <div class="swatch" style="background:rgba(180,0,255,0.55)"></div>
+      <div class="shade-info">
+        <div class="shade-name">Zona D — Media columna izq.</div>
+        <div class="shade-desc">Sombreado vertical parcial. Evalúa comportamiento inter-string</div>
+      </div>
+    </div>
+
+    <div class="shade-item active" data-id="4" onclick="toggle(4)">
+      <div class="swatch" style="background:rgba(0,255,120,0.55)"></div>
+      <div class="shade-info">
+        <div class="shade-name">Zona E — Célula individual</div>
+        <div class="shade-desc">Sombreado mínimo (1 célula). Verifica umbral de activación del diodo</div>
+      </div>
+    </div>
+
+    <button class="btn-all" onclick="toggleAll()">▣ Mostrar / Ocultar Todo</button>
+
+    <div class="info-box">
+      <b style="color:#58a6ff">Procedimiento:</b><br>
+      1. Aplicar sombra en cada zona<br>
+      2. Medir Voc e Isc del panel<br>
+      3. Verificar activación del diodo: <span>V ≈ -0.6V</span> en zona sombreada<br>
+      4. Comparar con termografía inicial<br>
+      5. Documentar temperatura con cámara IR
+    </div>
+  </div>
+</div>
+
+<script>
+const img = document.getElementById('panel');
+const canvas = document.getElementById('overlay');
+const ctx = canvas.getContext('2d');
+
+// Shading zones relative to panel position (percentages of panel area)
+// Panel in image occupies roughly x:8%–88%, y:5%–88% of image
+const zones = [
+  { // Zona A - bottom third
+    color: 'rgba(255,80,80,0.45)',
+    stroke: 'rgba(255,80,80,0.9)',
+    label: 'A — D1',
+    // in panel-relative coords (0-1)
+    px: 0.02, py: 0.68, pw: 0.96, ph: 0.30
+  },
+  { // Zona B - middle third
+    color: 'rgba(255,200,0,0.35)',
+    stroke: 'rgba(255,200,0,0.9)',
+    label: 'B — D2',
+    px: 0.02, py: 0.37, pw: 0.96, ph: 0.30
+  },
+  { // Zona C - top third
+    color: 'rgba(0,180,255,0.35)',
+    stroke: 'rgba(0,180,255,0.9)',
+    label: 'C — D3',
+    px: 0.02, py: 0.06, pw: 0.96, ph: 0.30
+  },
+  { // Zona D - left half vertical
+    color: 'rgba(180,0,255,0.30)',
+    stroke: 'rgba(180,0,255,0.9)',
+    label: 'D — Columna izq.',
+    px: 0.02, py: 0.06, pw: 0.45, ph: 0.92
+  },
+  { // Zona E - single cell bottom left area (hotspot zone)
+    color: 'rgba(0,255,120,0.40)',
+    stroke: 'rgba(0,255,120,0.95)',
+    label: 'E — 1 célula',
+    px: 0.10, py: 0.72, pw: 0.12, ph: 0.14
+  }
+];
+
+let visible = [true, true, true, true, true];
+let allVisible = true;
+
+// Panel bounds in image (approximate, fraction of image size)
+// image is ~680px wide, panel occupies roughly:
+const panelBounds = { x: 0.07, y: 0.04, w: 0.82, h: 0.88 };
+
+function draw() {
+  const W = canvas.width;
+  const H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const px = panelBounds.x * W;
+  const py = panelBounds.y * H;
+  const pw = panelBounds.w * W;
+  const ph = panelBounds.h * H;
+
+  zones.forEach((z, i) => {
+    if (!visible[i]) return;
+    const x = px + z.px * pw;
+    const y = py + z.py * ph;
+    const w = z.pw * pw;
+    const h = z.ph * ph;
+
+    // Fill
+    ctx.fillStyle = z.color;
+    ctx.fillRect(x, y, w, h);
+
+    // Hatching
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+    ctx.strokeStyle = z.stroke.replace('0.9','0.25');
+    ctx.lineWidth = 1;
+    for (let d = -h; d < w + h; d += 12) {
+      ctx.beginPath();
+      ctx.moveTo(x + d, y);
+      ctx.lineTo(x + d + h, y + h);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Border
+    ctx.strokeStyle = z.stroke;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([6, 3]);
+    ctx.strokeRect(x, y, w, h);
+    ctx.setLineDash([]);
+
+    // Label
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.max(11, W * 0.016)}px Courier New`;
+    ctx.shadowColor = '#000';
+    ctx.shadowBlur = 4;
+    ctx.fillText(z.label, x + 6, y + 18);
+    ctx.shadowBlur = 0;
+  });
+}
+
+function resize() {
+  canvas.width = img.offsetWidth;
+  canvas.height = img.offsetHeight;
+  draw();
+}
+
+function toggle(i) {
+  visible[i] = !visible[i];
+  document.querySelectorAll('.shade-item')[i].classList.toggle('active', visible[i]);
+  draw();
+}
+
+function toggleAll() {
+  allVisible = !allVisible;
+  visible = visible.map(() => allVisible);
+  document.querySelectorAll('.shade-item').forEach((el, i) => el.classList.toggle('active', allVisible));
+  draw();
+}
+
+img.onload = resize;
+if (img.complete) resize();
+window.addEventListener('resize', resize);
+</script>
+</body>
+</html>
